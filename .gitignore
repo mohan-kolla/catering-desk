@@ -1,0 +1,16 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Node
+node_modules/
+dist/
+
+# Local data and secrets
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.local
