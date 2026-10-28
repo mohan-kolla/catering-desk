@@ -8,7 +8,7 @@ namespace CateringDemo.Api.Controllers;
 
 [ApiController]
 [Route("api/orders")]
-public class OrdersController(AppDbContext db) : ControllerBase
+public class OrdersController(AppDbContext db, MarketPriceCache priceCache) : ControllerBase
 {
     [HttpGet]
     public async Task<List<OrderSummaryDto>> GetAll() =>
@@ -37,14 +37,20 @@ public class OrdersController(AppDbContext db) : ControllerBase
     [HttpPost("check")]
     public async Task<ActionResult<OrderCheckResult>> Check(CheckOrderRequest request)
     {
+        var region = request.Region ?? BlsCatalog.NationalRegion;
+        if (!BlsCatalog.IsValidRegion(region)) return BadRequest($"Unknown region '{region}'.");
+
         var lines = await ResolveLinesAsync(request.Lines);
         if (lines is null) return BadRequest("One or more menu items do not exist.");
-        return ShortfallCalculator.Calculate(lines);
+        return Price(lines, region);
     }
 
     [HttpPost]
     public async Task<ActionResult<OrderCheckResult>> Create(CreateOrderRequest request)
     {
+        var region = request.Region ?? BlsCatalog.NationalRegion;
+        if (!BlsCatalog.IsValidRegion(region)) return BadRequest($"Unknown region '{region}'.");
+
         var lines = await ResolveLinesAsync(request.Lines);
         if (lines is null) return BadRequest("One or more menu items do not exist.");
 
@@ -61,7 +67,7 @@ public class OrdersController(AppDbContext db) : ControllerBase
         db.CateringOrders.Add(order);
         await db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = order.Id }, ShortfallCalculator.Calculate(lines));
+        return CreatedAtAction(nameof(GetById), new { id = order.Id }, Price(lines, region));
     }
 
     [HttpDelete("{id:int}")]
@@ -73,6 +79,15 @@ public class OrdersController(AppDbContext db) : ControllerBase
         db.CateringOrders.Remove(order);
         await db.SaveChangesAsync();
         return NoContent();
+    }
+
+    private OrderCheckResult Price(List<(MenuItem Item, int Servings)> lines, string region)
+    {
+        var ingredients = lines
+            .SelectMany(l => l.Item.Recipe.Select(r => r.Ingredient))
+            .DistinctBy(i => i.Id);
+        var prices = PriceResolver.Resolve(ingredients, priceCache, region);
+        return ShortfallCalculator.Calculate(lines, prices, region);
     }
 
     private async Task<List<(MenuItem Item, int Servings)>?> ResolveLinesAsync(List<OrderLineRequest> requested)

@@ -1,4 +1,5 @@
 using CateringDemo.Api.Data;
+using CateringDemo.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,16 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+
+// Market prices: BLS client, in-memory cache, and a daily background refresh.
+// Set BLS_API_KEY to enable; without it the app uses estimated prices only.
+builder.Services.AddSingleton<MarketPriceCache>();
+builder.Services.AddHttpClient<BlsClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.bls.gov/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHostedService<MarketPriceRefresher>();
 
 var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173").Split(',');
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>

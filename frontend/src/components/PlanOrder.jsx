@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { api, money } from "../api.js";
+import { useEffect, useState } from "react";
+import { api, money, formatPeriod, regionPhrase } from "../api.js";
 import { useLoad } from "./useLoad.js";
 
-export default function PlanOrder() {
+export default function PlanOrder({ region }) {
   const { data: menu, error: loadError } = useLoad(api.getMenu);
   const [customer, setCustomer] = useState("");
   const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
@@ -10,6 +10,11 @@ export default function PlanOrder() {
   const [selected, setSelected] = useState({}); // menuItemId -> servings
   const [check, setCheck] = useState(null);
   const [message, setMessage] = useState("");
+
+  // A stock check is priced for one region, so clear it when the region changes.
+  useEffect(() => {
+    setCheck(null);
+  }, [region]);
 
   const lines = Object.entries(selected).map(([id, servings]) => ({
     menuItemId: Number(id),
@@ -34,7 +39,7 @@ export default function PlanOrder() {
   async function runCheck() {
     setMessage("");
     try {
-      setCheck(await api.checkOrder(lines));
+      setCheck(await api.checkOrder(lines, region));
     } catch (e) {
       setMessage(e.message);
     }
@@ -43,7 +48,7 @@ export default function PlanOrder() {
   async function save() {
     setMessage("");
     try {
-      await api.createOrder({ customerName: customer, eventDate, headcount: Number(headcount), lines });
+      await api.createOrder({ customerName: customer, eventDate, headcount: Number(headcount), lines, region });
       setMessage(`Order saved for ${customer}.`);
       setSelected({});
       setCheck(null);
@@ -125,7 +130,10 @@ export default function PlanOrder() {
               <tbody>
                 {check.lines.map((l) => (
                   <tr key={l.ingredientId} className={l.short > 0 ? "short" : undefined}>
-                    <td>{l.ingredient}</td>
+                    <td>
+                      {l.ingredient}
+                      {l.priceSource === "estimated" && <span className="est" title="Estimated price">*</span>}
+                    </td>
                     <td className="num">{l.needed} {l.unit}</td>
                     <td className="num">{l.onHand}</td>
                     <td className="num">{l.short > 0 ? l.short : ""}</td>
@@ -138,6 +146,12 @@ export default function PlanOrder() {
               <div><dt>Order revenue</dt><dd>{money(check.revenue)}</dd></div>
               <div><dt>Margin</dt><dd>{money(check.revenue - check.foodCost)}</dd></div>
             </dl>
+            <p className="price-note">
+              {check.pricePeriod
+                ? `Food cost uses BLS retail ${regionPhrase(check.region)}, ${formatPeriod(check.pricePeriod)}.`
+                : "Live market prices are unavailable, so food cost uses estimates."}
+              {check.lines.some((l) => l.priceSource === "estimated") && " * Estimated price."}
+            </p>
           </>
         )}
       </aside>

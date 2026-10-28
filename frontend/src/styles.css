@@ -76,12 +76,38 @@ body {
   color: var(--maroon);
 }
 
-/* Tabs */
+/* Tabs and region picker */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  margin: 20px 0 28px;
+}
+
 .tabs {
   display: flex;
   gap: 4px;
-  margin: 20px 0 28px;
   overflow-x: auto;
+}
+
+label.region-picker {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.region-picker select {
+  font: inherit;
+  font-weight: 600;
+  color: var(--maroon);
+  padding: 6px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
 }
 
 .tab {
@@ -151,6 +177,30 @@ button.tab { border-radius: 0; }
 .error { color: var(--short); font-weight: 600; }
 .summary { margin: 0 0 12px; font-weight: 600; }
 .message { margin: 12px 0 0; font-weight: 600; }
+
+.price-note {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ticket .price-note { margin: 14px 0 0; }
+
+.est {
+  margin-left: 2px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.source {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.source.regional { color: var(--ok); }
+.source.national { color: #8a5d0a; }
+.source.estimated { color: var(--muted); font-weight: 400; }
 
 .sr-only {
   position: absolute;

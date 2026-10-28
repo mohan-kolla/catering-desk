@@ -6,13 +6,18 @@ namespace CateringDemo.Api.Data;
 // Generates a fictional restaurant's data. Nothing here comes from a real business.
 public static class SeedData
 {
-    private static readonly (string Name, string Unit, double Cost)[] IngredientPool =
+    // Cost is the generated fallback price. Bls is the closest BLS average price
+    // item (see Services/BlsCatalog.cs), or null when BLS has no comparable item.
+    private static readonly (string Name, string Unit, double Cost, string? Bls)[] IngredientPool =
     {
-        ("Chicken thigh", "lb", 3.20), ("Ground beef", "lb", 4.80), ("Basmati rice", "lb", 1.10),
-        ("Penne pasta", "lb", 1.40), ("Yellow onion", "lb", 0.90), ("Tomatoes", "lb", 1.60),
-        ("Bell peppers", "lb", 2.10), ("Potatoes", "lb", 0.70), ("Mixed greens", "lb", 3.50),
-        ("Red lentils", "lb", 1.30), ("Olive oil", "qt", 6.50), ("Heavy cream", "qt", 4.20),
-        ("Parmesan", "lb", 9.00), ("Seasonal fruit", "lb", 2.40), ("Flatbread", "ea", 0.60)
+        ("Chicken thigh", "lb", 3.20, "706212"), ("Ground beef", "lb", 4.80, "703112"),
+        ("Basmati rice", "lb", 1.10, "701312"), ("Penne pasta", "lb", 1.40, "701322"),
+        ("Yellow onion", "lb", 0.90, null), ("Tomatoes", "lb", 1.60, "712311"),
+        ("Bell peppers", "lb", 2.10, "712406"), ("Potatoes", "lb", 0.70, "712112"),
+        ("Mixed greens", "lb", 3.50, "FL2101"), ("Red lentils", "lb", 1.30, "714233"),
+        ("Olive oil", "qt", 6.50, null), ("Heavy cream", "qt", 4.20, null),
+        ("Parmesan", "lb", 9.00, null), ("Seasonal fruit", "lb", 2.40, null),
+        ("Flatbread", "ea", 0.60, null)
     };
 
     private static readonly (string Name, string Category)[] MenuPool =
@@ -35,6 +40,7 @@ public static class SeedData
             Name = p.Name,
             Unit = p.Unit,
             CostPerUnit = (decimal)p.Cost,
+            BlsItemCode = p.Bls,
             ReorderLevel = Math.Round(f.Random.Double(10, 30)),
             QuantityOnHand = Math.Round(f.Random.Double(0, 80), 1)
         }).ToList();

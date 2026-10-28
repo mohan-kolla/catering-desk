@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api } from "./api.js";
+import { api, REGIONS } from "./api.js";
 import Inventory from "./components/Inventory.jsx";
 import PlanOrder from "./components/PlanOrder.jsx";
 import Orders from "./components/Orders.jsx";
@@ -10,12 +10,33 @@ const VIEWS = [
   { id: "orders", label: "Orders", Component: Orders },
 ];
 
+const REGION_KEY = "cateringDesk.region";
+
+function savedRegion() {
+  try {
+    const stored = localStorage.getItem(REGION_KEY);
+    return REGIONS.some((r) => r.code === stored) ? stored : "0000";
+  } catch {
+    return "0000";
+  }
+}
+
 export default function App() {
   const [view, setView] = useState("plan");
+  const [region, setRegion] = useState(savedRegion);
   const [refreshKey, setRefreshKey] = useState(0); // remounts views after a reset
   const [resetting, setResetting] = useState(false);
 
   const { Component } = VIEWS.find((v) => v.id === view);
+
+  function changeRegion(code) {
+    setRegion(code);
+    try {
+      localStorage.setItem(REGION_KEY, code);
+    } catch {
+      // Storage can be unavailable (private browsing); the choice still applies this session.
+    }
+  }
 
   async function handleReset() {
     setResetting(true);
@@ -39,25 +60,36 @@ export default function App() {
         </button>
       </header>
 
-      <nav className="tabs" aria-label="Sections">
-        {VIEWS.map((v) => (
-          <button
-            key={v.id}
-            className={v.id === view ? "tab active" : "tab"}
-            aria-current={v.id === view ? "page" : undefined}
-            onClick={() => setView(v.id)}
-          >
-            {v.label}
-          </button>
-        ))}
-      </nav>
+      <div className="toolbar">
+        <nav className="tabs" aria-label="Sections">
+          {VIEWS.map((v) => (
+            <button
+              key={v.id}
+              className={v.id === view ? "tab active" : "tab"}
+              aria-current={v.id === view ? "page" : undefined}
+              onClick={() => setView(v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </nav>
+        <label className="region-picker">
+          Ingredient prices
+          <select value={region} onChange={(e) => changeRegion(e.target.value)}>
+            {REGIONS.map((r) => (
+              <option key={r.code} value={r.code}>{r.name}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <main>
-        <Component key={`${view}-${refreshKey}`} />
+        <Component key={`${view}-${refreshKey}`} region={region} />
       </main>
 
       <footer>
-        Portfolio demo. All restaurant data is randomly generated; no real business data is used.
+        Portfolio demo. Restaurant data is randomly generated; no real business data is used.
+        Ingredient prices come from U.S. Bureau of Labor Statistics retail averages where available.
       </footer>
     </div>
   );

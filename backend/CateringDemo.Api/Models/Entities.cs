@@ -8,6 +8,10 @@ public class Ingredient
     public double QuantityOnHand { get; set; }
     public double ReorderLevel { get; set; }
     public decimal CostPerUnit { get; set; }
+
+    // BLS average price item this ingredient is priced from, if one fits.
+    // Null means the app always uses the generated CostPerUnit as an estimate.
+    public string? BlsItemCode { get; set; }
 }
 
 public class MenuItem
