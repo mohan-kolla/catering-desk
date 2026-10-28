@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, money, formatPeriod, regionPhrase } from "../api.js";
 import { useLoad } from "./useLoad.js";
 
-export default function PlanOrder({ region }) {
+export default function PlanOrder({ region, active = true }) {
   const { data: menu, error: loadError } = useLoad(api.getMenu);
   const [customer, setCustomer] = useState("");
   const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
@@ -15,6 +15,17 @@ export default function PlanOrder({ region }) {
   useEffect(() => {
     setCheck(null);
   }, [region]);
+
+  // Stock may have changed while another tab was open (for example, a restock),
+  // so re-run an existing check when the planner comes back into view.
+  const wasActive = useRef(active);
+  useEffect(() => {
+    const cameBack = active && !wasActive.current;
+    wasActive.current = active;
+    if (cameBack && check) runCheck();
+    // Only react to the tab becoming visible, not to every edit of the order.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
 
   const lines = Object.entries(selected).map(([id, servings]) => ({
     menuItemId: Number(id),

@@ -5,9 +5,9 @@ import PlanOrder from "./components/PlanOrder.jsx";
 import Orders from "./components/Orders.jsx";
 
 const VIEWS = [
-  { id: "plan", label: "Plan an order", Component: PlanOrder },
-  { id: "inventory", label: "Inventory", Component: Inventory },
-  { id: "orders", label: "Orders", Component: Orders },
+  { id: "plan", label: "Plan an order" },
+  { id: "inventory", label: "Inventory" },
+  { id: "orders", label: "Orders" },
 ];
 
 const REGION_KEY = "cateringDesk.region";
@@ -26,8 +26,6 @@ export default function App() {
   const [region, setRegion] = useState(savedRegion);
   const [refreshKey, setRefreshKey] = useState(0); // remounts views after a reset
   const [resetting, setResetting] = useState(false);
-
-  const { Component } = VIEWS.find((v) => v.id === view);
 
   function changeRegion(code) {
     setRegion(code);
@@ -84,7 +82,13 @@ export default function App() {
       </div>
 
       <main>
-        <Component key={`${view}-${refreshKey}`} region={region} />
+        {/* The planner stays mounted while hidden, so a half-built order survives
+            a trip to Inventory or Orders. Those two reload fresh each time they open. */}
+        <div hidden={view !== "plan"}>
+          <PlanOrder key={`plan-${refreshKey}`} region={region} active={view === "plan"} />
+        </div>
+        {view === "inventory" && <Inventory key={`inventory-${refreshKey}`} region={region} />}
+        {view === "orders" && <Orders key={`orders-${refreshKey}`} />}
       </main>
 
       <footer>
